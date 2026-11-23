@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#201e1c">
+  <title>Discrete Mathematics Final Project</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #24211f;
+      --muted: #716b64;
+      --paper: #fbf4e3;
+      --paper-deep: #f3ead6;
+      --orange: #ff7029;
+      --orange-dark: #e85a15;
+      --line: #dfd4bf;
+      --sidebar: #211f1d;
+      --green: #2a805d;
+      --red: #d8564e;
+      --blue: #4775b8;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--paper); }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .app-shell { min-height: 100vh; }
+    .sidebar {
+      position: fixed;
+      z-index: 5;
+      inset: 0 auto 0 0;
+      display: flex;
+      flex-direction: column;
+      width: 310px;
+      padding: 30px 26px 24px;
+      color: #fffaf0;
+      background: var(--sidebar);
+      overflow-y: auto;
+    }
+    .brand { padding: 12px 8px 29px; border-bottom: 1px solid #49443f; }
+    .brand-mark { display: flex; align-items: center; gap: 12px; color: #ff9a5d; font-size: 25px; }
+    .brand h1 { margin: 0; font-size: 15px; line-height: 1.5; letter-spacing: .11em; }
+    .brand p { margin: 18px 0 0; color: #bbb2a7; font-size: 14px; }
+    .nav { display: grid; gap: 12px; padding: 32px 0; border-bottom: 1px solid #49443f; }
+    .nav-button {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      min-height: 56px;
+      padding: 14px 16px;
+      border: 0;
+      border-radius: 12px;
+      color: white;
+      background: linear-gradient(110deg, #ff7029, #ff8a45);
+      font-size: 13px;
+      font-weight: 750;
+      text-align: left;
+      transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+    }
+    .nav-button:hover { transform: translateY(-2px); filter: brightness(1.05); }
+    .nav-button[aria-current="page"] { box-shadow: inset 0 0 0 2px #ffd0a9, 0 7px 18px #ff70292c; }
+    .nav-icon { width: 21px; text-align: center; font-size: 18px; }
+    .sidebar-current { padding: 24px 6px; border-bottom: 1px solid #49443f; }
+    .sidebar-current h2, .team-mini h2 { margin: 0 0 15px; color: #ffb078; font-size: 11px; letter-spacing: .14em; }
+    .mini-stats { display: flex; gap: 12px; }
+    .mini-stat { flex: 1; padding: 12px; border: 1px solid #49443f; border-radius: 10px; background: #2a2724; }
+    .mini-stat span { display: block; color: #bcb3a8; font-size: 11px; }
+    .mini-stat strong { display: block; margin-top: 5px; font-size: 18px; }
+    .team-mini { margin-top: auto; padding: 24px 6px 0; }
+    .team-mini p { margin: 7px 0; color: #d2cbc1; font-size: 12px; line-height: 1.5; }
+    .workspace { min-height: 100vh; margin-left: 310px; }
+    .topbar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      height: 54px;
+      gap: 12px;
+      padding: 0 30px;
+      color: #bdb8b1;
+      background: #181716;
+    }
+    .topbar-label { font-size: 12px; letter-spacing: .08em; }
+    .topbar-logo { display: block; width: 40px; height: 40px; padding: 3px; border-radius: 50%; background: #fffaf0; object-fit: contain; }
+    .mobile-menu { display: none; margin-right: auto; border: 0; color: white; background: none; font-size: 20px; }
+    main { width: min(1120px, 100%); margin: 0 auto; padding: 58px 54px 38px; }
+    .hero-strip { height: 78px; margin: 0 0 54px; border-radius: 22px; background: linear-gradient(110deg, #ff7029, #ff8a45); box-shadow: 0 16px 38px #eb71252e; }
+    .eyebrow { margin: 0 0 12px; color: var(--orange-dark); font-size: 11px; font-weight: 800; letter-spacing: .19em; text-transform: uppercase; }
+    .page-title { margin: 0; font-size: clamp(29px, 4vw, 46px); line-height: 1.1; font-weight: 850; letter-spacing: -.045em; }
+    .page-lede { max-width: 780px; margin: 17px 0 34px; color: #524d47; font-size: 17px; line-height: 1.65; }
+    .section-heading { margin: 42px 0 20px; font-size: 23px; letter-spacing: -.025em; }
+    .section-subtitle { margin: -7px 0 24px; color: var(--muted); font-size: 15px; line-height: 1.6; }
+    .card {
+      border: 1px solid #e8decb;
+      border-radius: 16px;
+      background: #fffaf0;
+      box-shadow: 0 8px 22px #4030180a;
+    }
+    .card-pad { padding: 24px; }
+    .profile-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+    .profile-card { overflow: hidden; }
+    .portrait {
+      display: grid;
+      place-items: center;
+      height: 225px;
+      overflow: hidden;
+      position: relative;
+      color: #fffaf0;
+      background:
+        radial-gradient(circle at 50% 30%, #ffffff44 0 20%, transparent 21%),
+        linear-gradient(145deg, #a4a2a8, #737783 55%, #3b4b66);
+      font-size: 47px;
+      font-weight: 800;
+      letter-spacing: -.06em;
+    }
+    .portrait img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 20%;
+    }
+    .profile-content { padding: 19px; }
+    .profile-content h3 { margin: 0; font-size: 15px; line-height: 1.4; letter-spacing: .015em; }
+    .student-id { margin: 8px 0 13px; color: var(--muted); font-size: 12px; }
+    .role-pill { display: inline-flex; padding: 7px 10px; border-radius: 20px; color: #9c431a; background: #ffead9; font-size: 11px; font-weight: 750; }
+    .contributions { margin: 16px 0 0; padding-left: 18px; color: #5f5951; font-size: 12px; line-height: 1.65; }
+    .overview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .overview-card h3 { margin: 0 0 15px; font-size: 17px; }
+    .overview-card ul { margin: 0; padding-left: 20px; color: #5f5951; font-size: 13px; line-height: 1.8; }
+    .tabs { display: flex; gap: 8px; padding: 6px; border: 1px solid var(--line); border-radius: 13px; background: #f4eddd; }
+    .tab-button { flex: 1; min-height: 44px; padding: 10px; border: 0; border-radius: 9px; color: #625c53; background: transparent; font-size: 12px; font-weight: 750; }
+    .tab-button[aria-selected="true"] { color: #fff; background: var(--orange); box-shadow: 0 4px 10px #e75b1e33; }
+    .tab-panel { margin-top: 22px; }
+    .graph-layout { display: grid; grid-template-columns: minmax(235px, .75fr) minmax(0, 1.55fr); gap: 20px; align-items: start; }
+    .card-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 20px; font-size: 15px; letter-spacing: .02em; }
+    .field { margin: 18px 0; }
+    .field label, .field-label { display: block; margin-bottom: 9px; color: #4e4943; font-size: 13px; font-weight: 700; }
+    .range-row { display: flex; align-items: center; gap: 12px; }
+    input[type="range"] { width: 100%; accent-color: var(--orange); }
+    .range-value { min-width: 34px; color: var(--orange-dark); font-size: 14px; font-weight: 800; text-align: right; }
+    .range-limits { display: flex; justify-content: space-between; margin-top: 2px; color: #90887e; font-size: 11px; }
+    .primary-button, .secondary-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 43px;
+      padding: 11px 16px;
+      border: 0;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      transition: transform .15s ease, filter .15s ease;
+    }
+    .primary-button { width: 100%; color: white; background: var(--orange); }
+    .primary-button:hover, .secondary-button:hover { transform: translateY(-1px); filter: brightness(.97); }
+    .secondary-button { color: #7e3919; background: #ffe4d1; }
+    .notice { margin: 16px 0 0; padding: 11px 12px; border-radius: 9px; color: #39704e; background: #e8f4e9; font-size: 12px; line-height: 1.45; }
+    .notice:empty { display: none; }
+    .stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+    .stat-box { padding: 13px; border-radius: 10px; background: #f4eddd; }
+    .stat-box span { display: block; color: #766e64; font-size: 11px; }
+    .stat-box strong { display: block; margin-top: 5px; font-size: 17px; }
+    .visual-card { min-height: 380px; }
+    .graph-canvas { display: grid; place-items: center; min-height: 310px; border-radius: 12px; background: radial-gradient(ellipse at center, #fffdf6, #f8f0df 70%); overflow: hidden; }
+    .graph-canvas svg { width: 100%; max-height: 430px; }
+    .empty-state { display: grid; place-items: center; min-height: 310px; padding: 26px; color: #766f65; text-align: center; }
+    .empty-state .empty-icon { margin-bottom: 8px; font-size: 30px; }
+    .empty-state p { max-width: 280px; margin: 0; font-size: 13px; line-height: 1.55; }
+    .graph-edge { stroke: #b8afa1; stroke-width: 2; }
+    .graph-node { fill: var(--orange); stroke: white; stroke-width: 3; }
+    .graph-label { fill: #302c28; font-size: 13px; font-weight: 800; text-anchor: middle; dominant-baseline: middle; }
+    .analysis-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, .7fr); gap: 20px; }
+    .degree-list { display: grid; gap: 10px; }
+    .degree-row { display: grid; grid-template-columns: 67px 1fr 28px; gap: 12px; align-items: center; color: #5f5951; font-size: 12px; }
+    .degree-track { height: 11px; border-radius: 10px; background: #eee5d3; overflow: hidden; }
+    .degree-bar { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #ff7029, #ffad68); }
+    .degree-number { color: var(--ink); font-weight: 800; text-align: right; }
+    .properties { display: grid; gap: 12px; }
+    .property-line { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid #eee5d3; color: #6a6259; font-size: 12px; }
+    .property-line strong { color: var(--ink); text-align: right; }
+    .table-wrap { max-width: 100%; overflow: auto; border: 1px solid #e7dece; border-radius: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { min-width: 42px; padding: 10px; border-right: 1px solid #eee5d3; border-bottom: 1px solid #eee5d3; text-align: center; }
+    th { position: sticky; top: 0; z-index: 1; color: #60432f; background: #f4ead6; }
+    th:first-child { left: 0; z-index: 2; }
+    td:first-child { position: sticky; left: 0; color: #60432f; background: #f4ead6; font-weight: 800; }
+    .route-layout { display: grid; grid-template-columns: minmax(250px, .8fr) minmax(0, 1.45fr); gap: 20px; align-items: start; }
+    .select-field { width: 100%; min-height: 43px; padding: 10px 12px; border: 1px solid #d9cfbd; border-radius: 9px; color: var(--ink); background: #fffdf8; }
+    .check-row { display: flex; align-items: flex-start; gap: 10px; margin: 14px 0; color: #554f47; font-size: 12px; line-height: 1.45; cursor: pointer; }
+    .check-row input { margin-top: 2px; accent-color: var(--orange); }
+    .route-map { height: 380px; min-height: 380px; padding: 0; border-radius: 12px; background: #f7f0e2; overflow: hidden; }
+    .route-map .map-error { display: grid; place-items: center; height: 100%; padding: 24px; color: #91433c; text-align: center; font-size: 13px; line-height: 1.5; }
+    .leaflet-container { z-index: 0; font: inherit; }
+    .leaflet-control-attribution { font-size: 10px !important; }
+    .leaflet-city-label { color: #302c28; font-size: 11px; font-weight: 750; text-shadow: 0 1px 2px #fff, 1px 0 2px #fff, 0 -1px 2px #fff, -1px 0 2px #fff; }
+    .route-result { margin-top: 15px; }
+    .route-summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
+    .route-summary .stat-box strong { font-size: 15px; }
+    .route-stops { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0; }
+    .route-stop { padding: 7px 10px; border-radius: 20px; color: #71401f; background: #ffe5d1; font-size: 11px; font-weight: 750; }
+    .route-arrow { color: #a89c8d; font-size: 12px; }
+    .alt-routes { margin-top: 14px; border-top: 1px solid #eee5d3; }
+    .alt-route { padding: 12px 0; border-bottom: 1px solid #eee5d3; color: #5d564d; font-size: 12px; line-height: 1.55; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px 18px; margin-top: 15px; color: #655f57; font-size: 11px; }
+    .legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; background: #525960; }
+    .legend-dot.start { background: var(--green); }
+    .legend-dot.end { background: var(--red); }
+    .legend-dot.stop { background: var(--blue); }
+    .page-footer { margin-top: 46px; padding-top: 20px; border-top: 1px solid var(--line); color: #81786c; font-size: 10px; line-height: 1.6; letter-spacing: .06em; text-align: center; }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 1050px) {
+      .sidebar { width: 270px; padding-inline: 20px; }
+      .workspace { margin-left: 270px; }
+      main { padding-inline: 34px; }
+      .graph-layout, .route-layout { grid-template-columns: 1fr; }
+      .profile-grid { gap: 12px; }
+      .portrait { height: 185px; }
+    }
+    @media (max-width: 760px) {
+      .sidebar { width: 290px; transform: translateX(-100%); transition: transform .2s ease; box-shadow: 10px 0 32px #0003; }
+      .sidebar.open { transform: translateX(0); }
+      .workspace { margin-left: 0; }
+      .topbar { justify-content: flex-end; height: 52px; padding: 0 18px; }
+      .mobile-menu { display: block; }
+      main { padding: 35px 20px 28px; }
+      .hero-strip { height: 56px; margin-bottom: 38px; border-radius: 16px; }
+      .profile-grid { grid-template-columns: 1fr; }
+      .portrait { height: 230px; }
+      .overview-grid, .analysis-grid { grid-template-columns: 1fr; }
+      .tabs { display: grid; grid-template-columns: 1fr; }
+      .tab-button { min-height: 39px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark"><span aria-hidden="true">◎</span><h1>DISCRETE MATHEMATICS<br>FINAL PROJECT</h1></div>
+        <p>Advanced Graph Analysis Platform</p>
+      </div>
+      <nav class="nav" aria-label="Main navigation">
+        <button class="nav-button" data-page="team" aria-current="page"><span class="nav-icon">👥</span> TEAM PROFILES</button>
+        <button class="nav-button" data-page="graph"><span class="nav-icon">📊</span> GRAPH MATRIX APP</button>
+        <button class="nav-button" data-page="routes"><span class="nav-icon">🗺️</span> JAVA ROUTE FINDER</button>
+      </nav>
+      <section class="sidebar-current" id="sidebar-current" hidden>
+        <h2>CURRENT GRAPH</h2>
+        <div class="mini-stats">
+          <div class="mini-stat"><span>Nodes</span><strong id="mini-nodes">—</strong></div>
+          <div class="mini-stat"><span>Edges</span><strong id="mini-edges">—</strong></div>
+        </div>
+      </section>
+      <section class="team-mini">
+        <h2>DEVELOPMENT TEAM</h2>
+        <p>Yoel Lorenzo Kurniawan</p>
+        <p>Jennifer Manullang</p>
+        <p>Putri Nila Amelia Nabila</p>
+      </section>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar"><button class="mobile-menu" id="mobile-menu" aria-label="Open navigation">☰</button><span class="topbar-label">GRAPH MATRIX PRO</span><img class="topbar-logo" src="president-university-logo.png" alt="President University"></header>
+      <main id="main-content">
+        <div class="hero-strip" aria-hidden="true"></div>
+        <section id="page-team" class="page">
+          <p class="eyebrow">Discrete mathematics · Final project</p>
+          <h1 class="page-title">TEAM MEMBER PROFILES</h1>
+          <p class="page-lede">Meet the talented team behind Graph Matrix Pro.</p>
+          <div class="profile-grid">
+            <article class="card profile-card">
+              <div class="portrait" aria-label="Portrait of Yoel Lorenzo Kurniawan"><img src="yoel.jpg" alt="Yoel Lorenzo Kurniawan"></div>
+              <div class="profile-content">
+                <h3>YOEL LORENZO KURNIAWAN</h3>
+                <span class="role-pill">⚙️ Project Manager &amp; Team Leader</span>
+                <ul class="contributions">
+                  <li>Coordinated tasks, timelines, and the development workflow.</li>
+                  <li>Handled deployment and managed repository structure.</li>
+                  <li>Ensured the final release met project requirements.</li>
+                </ul>
+              </div>
+            </article>
+            <article class="card profile-card">
+              <div class="portrait" aria-label="Portrait of Jennifer Manullang"><img src="jennifer.jpeg" alt="Jennifer Manullang"></div>
+              <div class="profile-content">
+                <h3>JENNIFER MANULLANG</h3>
+                <span class="role-pill">🧪 Quality Assurance (QA) &amp; Finalizer</span>
+                <ul class="contributions">
+                  <li>Tested the features and checked for bugs and inconsistencies.</li>
+                  <li>Verified fixes and reviewed the overall user experience.</li>
+                  <li>Finalized the project materials and submission.</li>
+                </ul>
+              </div>
+            </article>
+            <article class="card profile-card">
+              <div class="portrait" aria-label="Portrait of Putri Nila Amelia Nabila"><img src="putri.jpeg" alt="Putri Nila Amelia Nabila"></div>
+              <div class="profile-content">
+                <h3>PUTRI NILA AMELIA NABILA</h3>
+                <span class="role-pill">💻 Back-End &amp; Full-Stack Developer</span>
+                <ul class="contributions">
+                  <li>Built core application logic and server-side functionality.</li>
+                  <li>Managed data flow and integrated application components.</li>
+                  <li>Supported performance, stability, and troubleshooting.</li>
+                </ul>
+              </div>
+            </article>
+          </div>
+          <h2 class="section-heading">📋 PROJECT OVERVIEW</h2>
+          <div class="overview-grid">
+            <article class="card card-pad overview-card">
+              <h3>🎯 Project Objectives</h3>
+              <ul>
+                <li>Build a graph theory visualization and analysis tool.</li>
+                <li>Explore graph structure through node degrees and graph properties.</li>
+                <li>Find routes between cities on the island of Java.</li>
+              </ul>
+            </article>
+            <article class="card card-pad overview-card">
+              <h3>🛠️ Technologies &amp; Concepts</h3>
+              <ul>
+                <li>Interactive interface and graph visualization.</li>
+                <li>Node degrees and graph properties.</li>
+                <li>Discrete mathematics and graph theory.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section id="page-graph" class="page" hidden>
+          <p class="eyebrow">Explore · Calculate · Visualize</p>
+          <h1 class="page-title">📊 GRAPH MATRIX APPLICATION</h1>
+          <p class="page-lede">Explore graph theory through random graph generation, node degree analysis, and graph visualization.</p>
+          <div class="tabs" role="tablist" aria-label="Graph analysis views">
+            <button class="tab-button" role="tab" id="tab-visual" aria-controls="panel-visual" aria-selected="true">🎲 GRAPH VISUALIZATION</button>
+            <button class="tab-button" role="tab" id="tab-degrees" aria-controls="panel-degrees" aria-selected="false">📈 NODE DEGREES</button>
+          </div>
+          <div class="tab-panel" id="panel-visual" role="tabpanel" aria-labelledby="tab-visual">
+            <div class="graph-layout">
+              <section class="card card-pad">
+                <h2 class="card-title">⚙️ GRAPH CONFIGURATION</h2>
+                <p class="section-subtitle">Create a random, undirected graph.</p>
+                <div class="field">
+                  <label for="node-count">Number of Nodes</label>
+                  <div class="range-row"><input id="node-count" type="range" min="2" max="15" value="6"><output class="range-value" id="node-value">6</output></div>
+                  <div class="range-limits"><span>2</span><span>15</span></div>
+                </div>
+                <div class="field">
+                  <label for="edge-count">Number of Edges</label>
+                  <div class="range-row"><input id="edge-count" type="range" min="1" max="15" value="8"><output class="range-value" id="edge-value">8</output></div>
+                  <div class="range-limits"><span>1</span><span id="edge-limit">15</span></div>
+                </div>
+                <button class="primary-button" id="generate-graph">🎲 GENERATE RANDOM GRAPH</button>
+                <p class="notice" id="graph-notice" role="status"></p>
+                <div id="graph-info" hidden>
+                  <h3 class="card-title" style="margin-top:22px">📊 GRAPH INFORMATION</h3>
+                  <div class="stat-grid">
+                    <div class="stat-box"><span>Nodes</span><strong id="info-nodes">0</strong></div>
+                    <div class="stat-box"><span>Density</span><strong id="info-density">0</strong></div>
+                    <div class="stat-box"><span>Edges</span><strong id="info-edges">0</strong></div>
+                    <div class="stat-box"><span>Connected</span><strong id="info-connected">No</strong></div>
+                  </div>
+                </div>
+              </section>
+              <section class="card card-pad visual-card">
+                <h2 class="card-title">👁️ GRAPH VISUALIZATION</h2>
+                <div class="graph-canvas" id="graph-view">
+                  <div class="empty-state"><div><div class="empty-icon">👆</div><p>Choose the number of nodes and edges, then generate a random graph to see it here.</p></div></div>
+                </div>
+              </section>
+            </div>
+          </div>
+          <div class="tab-panel" id="panel-degrees" role="tabpanel" aria-labelledby="tab-degrees" hidden>
+            <div id="degrees-empty" class="card empty-state"><div><div class="empty-icon">📈</div><p>Generate a graph first to explore its node degrees and properties.</p></div></div>
+            <div class="analysis-grid" id="degrees-content" hidden>
+              <section class="card card-pad">
+                <h2 class="card-title">📊 NODE DEGREES CALCULATION</h2>
+                <div class="degree-list" id="degree-list"></div>
+              </section>
+              <section class="card card-pad">
+                <h2 class="card-title">📈 DEGREE STATISTICS</h2>
+                <div class="stat-grid">
+                  <div class="stat-box"><span>Maximum Degree</span><strong id="max-degree">0</strong></div>
+                  <div class="stat-box"><span>Minimum Degree</span><strong id="min-degree">0</strong></div>
+                  <div class="stat-box"><span>Average Degree</span><strong id="avg-degree">0</strong></div>
+                  <div class="stat-box"><span>Total Degree</span><strong id="total-degree">0</strong></div>
+                </div>
+                <h3 class="card-title" style="margin-top:24px">📋 GRAPH PROPERTIES</h3>
+                <div class="properties" id="graph-properties"></div>
+              </section>
+            </div>
+          </div>
+          <footer class="page-footer">🌐 GRAPH MATRIX PRO — FINAL PROJECT · COMPREHENSIVE GRAPH ANALYSIS &amp; JAVA ROUTE PLANNING</footer>
+        </section>
+
+        <section id="page-routes" class="page" hidden>
+          <p class="eyebrow">Weighted paths · Java Island</p>
+          <h1 class="page-title">🗺️ JAVA ISLAND ROUTE PLANNER</h1>
+          <p class="page-lede">Compare routes between cities and find a shortest path using Dijkstra’s algorithm.</p>
+          <div class="route-layout">
+            <section class="card card-pad">
+              <h2 class="card-title">📍 SELECT YOUR ROUTE</h2>
+              <div class="field"><label for="start-city">🚗 Start City</label><select class="select-field" id="start-city"></select></div>
+              <div class="field"><label for="end-city">🎯 Destination City</label><select class="select-field" id="end-city"></select></div>
+              <h3 class="card-title" style="margin-top:25px">🔧 ROUTING OPTIONS</h3>
+              <label class="check-row"><input type="checkbox" id="osrm-option" checked><span>Use OSRM for accurate routing (recommended)</span></label>
+              <label class="check-row"><input type="checkbox" id="alternatives-option" checked><span>Show alternative routes</span></label>
+              <button class="primary-button" id="find-route">🔍 FIND ROUTES</button>
+              <p class="notice" id="route-notice" role="status"></p>
+              <div class="route-result" id="route-result" hidden>
+                <div class="route-summary">
+                  <div class="stat-box"><span>Route distance</span><strong id="route-distance">—</strong></div>
+                  <div class="stat-box"><span>Estimated drive</span><strong id="route-duration">—</strong></div>
+                </div>
+                <p class="field-label">SHORTEST ROUTE</p>
+                <div class="route-stops" id="route-stops"></div>
+                <div class="alt-routes" id="alt-routes"></div>
+              </div>
+            </section>
+            <section class="card card-pad">
+              <h2 class="card-title">🗺️ INTERACTIVE JAVA MAP</h2>
+              <div class="route-map" id="route-map" role="region" aria-label="Interactive map of Java"></div>
+              <div class="legend">
+                <span><i class="legend-dot start"></i>Start city</span>
+                <span><i class="legend-dot end"></i>Destination</span>
+                <span><i class="legend-dot stop"></i>Route stops</span>
+                <span><i class="legend-dot"></i>Other cities</span>
+              </div>
+              <p class="section-subtitle" style="margin:16px 0 0">The map uses OpenStreetMap tiles and OSRM road directions; an internet connection is required.</p>
+            </section>
+          </div>
+          <footer class="page-footer">🌐 GRAPH MATRIX PRO — FINAL PROJECT · COMPREHENSIVE GRAPH ANALYSIS &amp; JAVA ROUTE PLANNING</footer>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    const graphState = { nodes: 6, edges: [], generated: false };
+    const nodeSlider = document.getElementById("node-count");
+    const edgeSlider = document.getElementById("edge-count");
+    const navButtons = [...document.querySelectorAll(".nav-button")];
+    const tabs = [...document.querySelectorAll(".tab-button")];
+    const graphSidebar = document.getElementById("sidebar-current");
+    const cityPoints = {
+      Jakarta: [-6.2088, 106.8456],
+      Bandung: [-6.9175, 107.6191],
+      Cirebon: [-6.7063, 108.5570],
+      Semarang: [-6.9667, 110.4167],
+      Yogyakarta: [-7.7956, 110.3695],
+      "Surakarta (Solo)": [-7.5755, 110.8243],
+      Surabaya: [-7.2575, 112.7521],
+      Malang: [-7.9666, 112.6326],
+      Banyuwangi: [-8.2192, 114.3691]
+    };
+    let routeMap;
+    let cityMarkers = {};
+    let selectedRouteLayer;
+    const roads = [
+      ["Jakarta", "Bandung", 151], ["Jakarta", "Cirebon", 219], ["Bandung", "Cirebon", 130],
+      ["Cirebon", "Semarang", 191], ["Bandung", "Yogyakarta", 390], ["Cirebon", "Yogyakarta", 250],
+      ["Semarang", "Yogyakarta", 130], ["Semarang", "Surakarta (Solo)", 105],
+      ["Yogyakarta", "Surakarta (Solo)", 65], ["Surakarta (Solo)", "Surabaya", 262],
+      ["Yogyakarta", "Surabaya", 330], ["Surabaya", "Malang", 95],
+      ["Surabaya", "Banyuwangi", 293], ["Malang", "Banyuwangi", 310]
+    ];
+
+    function showPage(page) {
+      document.querySelectorAll(".page").forEach(section => { section.hidden = section.id !== `page-${page}`; });
+      navButtons.forEach(button => {
+        if (button.dataset.page === page) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+      });
+      graphSidebar.hidden = page !== "graph";
+      document.getElementById("sidebar").classList.remove("open");
+      if (page === "routes") requestAnimationFrame(() => {
+        if (!routeMap) {
+          initializeRouteMap();
+          renderMap([]);
+        }
+        if (routeMap) routeMap.invalidateSize();
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    navButtons.forEach(button => button.addEventListener("click", () => showPage(button.dataset.page)));
+    document.getElementById("mobile-menu").addEventListener("click", () => document.getElementById("sidebar").classList.toggle("open"));
+    document.getElementById("main-content").addEventListener("click", event => {
+      if (event.target.closest(".page") && window.innerWidth <= 760) document.getElementById("sidebar").classList.remove("open");
+    });
+
+    function maximumEdges(nodes) { return nodes * (nodes - 1) / 2; }
+    function updateEdgeBounds() {
+      const max = maximumEdges(Number(nodeSlider.value));
+      edgeSlider.max = String(max);
+      document.getElementById("edge-limit").textContent = String(max);
+      if (Number(edgeSlider.value) > max) edgeSlider.value = String(max);
+      document.getElementById("edge-value").textContent = edgeSlider.value;
+      document.getElementById("node-value").textContent = nodeSlider.value;
+    }
+    nodeSlider.addEventListener("input", updateEdgeBounds);
+    edgeSlider.addEventListener("input", () => { document.getElementById("edge-value").textContent = edgeSlider.value; });
+
+    function getAdjacency() {
+      const matrix = Array.from({ length: graphState.nodes }, () => Array(graphState.nodes).fill(0));
+      graphState.edges.forEach(([a, b]) => { matrix[a][b] = 1; matrix[b][a] = 1; });
+      return matrix;
+    }
+
+    function analyzeGraph(matrix) {
+      const n = matrix.length;
+      const degrees = matrix.map(row => row.reduce((sum, value) => sum + value, 0));
+      const seen = new Set();
+      let components = 0;
+      for (let start = 0; start < n; start++) {
+        if (seen.has(start)) continue;
+        components++;
+        const stack = [start];
+        seen.add(start);
+        while (stack.length) {
+          const current = stack.pop();
+          for (let next = 0; next < n; next++) {
+            if (matrix[current][next] && !seen.has(next)) { seen.add(next); stack.push(next); }
+          }
+        }
+      }
+      let clusteringSum = 0;
+      degrees.forEach((degree, node) => {
+        if (degree < 2) return;
+        let links = 0;
+        for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) {
+          if (matrix[node][a] && matrix[node][b] && matrix[a][b]) links++;
+        }
+        clusteringSum += links / (degree * (degree - 1) / 2);
+      });
+      return {
+        degrees, components, connected: components === 1,
+        density: n < 2 ? 0 : (2 * graphState.edges.length) / (n * (n - 1)),
+        average: degrees.reduce((a, b) => a + b, 0) / n,
+        clustering: clusteringSum / n,
+        eulerian: components === 1 && degrees.every(degree => degree % 2 === 0)
+      };
+    }
+
+    function renderGraph() {
+      const n = graphState.nodes;
+      const cx = 300, cy = 190, radius = Math.min(140, 27 * n);
+      const points = Array.from({ length: n }, (_, i) => {
+        const angle = -Math.PI / 2 + (2 * Math.PI * i) / n;
+        return [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)];
+      });
+      const edgesSvg = graphState.edges.map(([a, b]) =>
+        `<line class="graph-edge" x1="${points[a][0]}" y1="${points[a][1]}" x2="${points[b][0]}" y2="${points[b][1]}"/>`
+      ).join("");
+      const nodesSvg = points.map(([x, y], i) =>
+        `<g><circle class="graph-node" cx="${x}" cy="${y}" r="19"/><text class="graph-label" x="${x}" y="${y}">${i + 1}</text></g>`
+      ).join("");
+      document.getElementById("graph-view").innerHTML = `<svg viewBox="0 0 600 380" role="img" aria-label="Generated graph with ${n} nodes and ${graphState.edges.length} edges">${edgesSvg}${nodesSvg}</svg>`;
+      const matrix = getAdjacency();
+      const stats = analyzeGraph(matrix);
+      document.getElementById("graph-notice").textContent = `✅ Generated graph with ${n} nodes and ${graphState.edges.length} edges.`;
+      document.getElementById("graph-info").hidden = false;
+      document.getElementById("info-nodes").textContent = n;
+      document.getElementById("info-edges").textContent = graphState.edges.length;
+      document.getElementById("info-density").textContent = stats.density.toFixed(3);
+      document.getElementById("info-connected").textContent = stats.connected ? "Yes" : "No";
+      document.getElementById("mini-nodes").textContent = n;
+      document.getElementById("mini-edges").textContent = graphState.edges.length;
+      renderDegrees(matrix, stats);
+    }
+
+    document.getElementById("generate-graph").addEventListener("click", () => {
+      graphState.nodes = Number(nodeSlider.value);
+      const count = Number(edgeSlider.value);
+      const candidates = [];
+      for (let a = 0; a < graphState.nodes; a++) for (let b = a + 1; b < graphState.nodes; b++) candidates.push([a, b]);
+      for (let i = candidates.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+      }
+      graphState.edges = candidates.slice(0, count);
+      graphState.generated = true;
+      renderGraph();
+    });
+
+    function renderDegrees(matrix, stats) {
+      const max = Math.max(1, ...stats.degrees);
+      document.getElementById("degree-list").innerHTML = stats.degrees.map((degree, index) =>
+        `<div class="degree-row"><span>Node ${index + 1}</span><div class="degree-track"><div class="degree-bar" style="width:${degree / max * 100}%"></div></div><span class="degree-number">${degree}</span></div>`
+      ).join("");
+      document.getElementById("max-degree").textContent = Math.max(...stats.degrees);
+      document.getElementById("min-degree").textContent = Math.min(...stats.degrees);
+      document.getElementById("avg-degree").textContent = stats.average.toFixed(2);
+      document.getElementById("total-degree").textContent = stats.degrees.reduce((a, b) => a + b, 0);
+      document.getElementById("graph-properties").innerHTML = [
+        ["Is Connected", stats.connected ? "Yes" : "No"],
+        ["Average Clustering", stats.clustering.toFixed(3)],
+        ["Number of Components", stats.components],
+        ["Graph Density", stats.density.toFixed(3)],
+        ["Is Eulerian", stats.eulerian ? "Yes" : "No"]
+      ].map(([label, value]) => `<div class="property-line"><span>${label}</span><strong>${value}</strong></div>`).join("");
+      document.getElementById("degrees-empty").hidden = graphState.generated;
+      document.getElementById("degrees-content").hidden = !graphState.generated;
+    }
+
+    tabs.forEach(tab => tab.addEventListener("click", () => {
+      tabs.forEach(other => other.setAttribute("aria-selected", String(other === tab)));
+      document.querySelectorAll(".tab-panel").forEach(panel => { panel.hidden = panel.id !== tab.getAttribute("aria-controls"); });
+    }));
+
+    function fillCities() {
+      const cities = Object.keys(cityPoints);
+      ["start-city", "end-city"].forEach((id, index) => {
+        const select = document.getElementById(id);
+        select.innerHTML = cities.map(city => `<option value="${city}">${city}</option>`).join("");
+        select.value = index === 0 ? "Jakarta" : "Surakarta (Solo)";
+      });
+    }
+
+    function shortestPath(start, end, blocked = new Set()) {
+      const distances = new Map(Object.keys(cityPoints).map(city => [city, Infinity]));
+      const previous = new Map();
+      const remaining = new Set(distances.keys());
+      distances.set(start, 0);
+      while (remaining.size) {
+        let current = null;
+        for (const city of remaining) if (current === null || distances.get(city) < distances.get(current)) current = city;
+        if (current === null || distances.get(current) === Infinity) break;
+        remaining.delete(current);
+        if (current === end) break;
+        roads.forEach(([a, b, weight], index) => {
+          if (blocked.has(index)) return;
+          const next = a === current ? b : b === current ? a : null;
+          if (next && remaining.has(next) && distances.get(current) + weight < distances.get(next)) {
+            distances.set(next, distances.get(current) + weight);
+            previous.set(next, { city: current, edge: index });
+          }
+        });
+      }
+      if (!Number.isFinite(distances.get(end))) return null;
+      const path = [end];
+      const edgeIds = [];
+      let current = end;
+      while (current !== start) {
+        const step = previous.get(current);
+        if (!step) return null;
+        edgeIds.unshift(step.edge);
+        current = step.city;
+        path.unshift(current);
+      }
+      return { path, distance: distances.get(end), edgeIds };
+    }
+
+    function initializeRouteMap() {
+      const container = document.getElementById("route-map");
+      if (!window.L) {
+        container.innerHTML = '<div class="map-error" role="status">The interactive map library could not be loaded. Check your internet connection and reload the page.</div>';
+        return;
+      }
+
+      routeMap = L.map(container, { scrollWheelZoom: false }).setView([-7.35, 110.3], 7);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(routeMap);
+      Object.entries(cityPoints).forEach(([city, coordinates]) => {
+        cityMarkers[city] = L.circleMarker(coordinates, {
+          radius: 7,
+          color: "#fff",
+          weight: 2,
+          fillColor: "#525960",
+          fillOpacity: 1
+        }).addTo(routeMap).bindTooltip(city, {
+          direction: "top",
+          offset: [0, -7],
+          className: "leaflet-city-label"
+        }).bindPopup(`<strong>${city}</strong>`);
+      });
+      selectedRouteLayer = L.layerGroup().addTo(routeMap);
+      routeMap.fitBounds(L.latLngBounds(Object.values(cityPoints)), { padding: [20, 20] });
+    }
+
+    function renderMap(path = [], roadGeometry = null) {
+      if (!routeMap || !selectedRouteLayer) return;
+      selectedRouteLayer.clearLayers();
+      Object.entries(cityMarkers).forEach(([city, marker]) => {
+        const color = city === path[0] && path.length > 1 ? "#2a805d"
+          : city === path[path.length - 1] && path.length > 1 ? "#d8564e"
+          : path.includes(city) ? "#4775b8" : "#525960";
+        marker.setStyle({ fillColor: color });
+      });
+      if (path.length < 2) {
+        routeMap.fitBounds(L.latLngBounds(Object.values(cityPoints)), { padding: [20, 20], maxZoom: 7 });
+        return;
+      }
+      const coordinates = roadGeometry || path.map(city => cityPoints[city]);
+      const selectedRoute = L.polyline(coordinates, {
+        color: "#ff7029",
+        weight: 5,
+        opacity: 0.9,
+        lineCap: "round",
+        lineJoin: "round"
+      }).addTo(selectedRouteLayer);
+      routeMap.fitBounds(selectedRoute.getBounds(), { padding: [28, 28], maxZoom: 8 });
+    }
+
+    async function getRoadRoute(path) {
+      const coordinates = path.map(city => {
+        const [latitude, longitude] = cityPoints[city];
+        return `${longitude},${latitude}`;
+      }).join(";");
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 15000);
+      try {
+        const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson&steps=false`, {
+          signal: controller.signal
+        });
+        if (!response.ok) throw new Error(`routing service returned HTTP ${response.status}`);
+        const data = await response.json();
+        if (data.code !== "Ok" || !data.routes || !data.routes.length || !data.routes[0].geometry) {
+          throw new Error("routing service returned no road route");
+        }
+        return data.routes[0];
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+    }
+
+    async function renderRoute() {
+      const start = document.getElementById("start-city").value;
+      const end = document.getElementById("end-city").value;
+      const notice = document.getElementById("route-notice");
+      const result = document.getElementById("route-result");
+      const findRouteButton = document.getElementById("find-route");
+      if (start === end) {
+        notice.textContent = "Choose two different cities to find a route.";
+        notice.style.color = "#91433c";
+        notice.style.background = "#f8e6e3";
+        result.hidden = true;
+        renderMap([]);
+        return;
+      }
+      const shortest = shortestPath(start, end);
+      if (!shortest) {
+        notice.textContent = "No route was found between the selected cities.";
+        result.hidden = true;
+        renderMap([]);
+        return;
+      }
+      notice.style.color = "";
+      notice.style.background = "";
+      result.hidden = false;
+      document.getElementById("route-distance").textContent = `${shortest.distance} km`;
+      document.getElementById("route-duration").textContent = `${Math.round(shortest.distance / 58)} hr ${Math.round((shortest.distance / 58 % 1) * 60)} min`;
+      document.getElementById("route-stops").innerHTML = shortest.path.map((city, i) =>
+        `${i ? '<span class="route-arrow">→</span>' : ""}<span class="route-stop">${city}</span>`
+      ).join("");
+      const altContainer = document.getElementById("alt-routes");
+      altContainer.innerHTML = "";
+      if (document.getElementById("alternatives-option").checked) {
+        const alternatives = [];
+        shortest.edgeIds.forEach(edgeId => {
+          const candidate = shortestPath(start, end, new Set([edgeId]));
+          if (candidate && candidate.distance > shortest.distance && !alternatives.some(route => route.path.join("|") === candidate.path.join("|"))) alternatives.push(candidate);
+        });
+        alternatives.sort((a, b) => a.distance - b.distance);
+        if (alternatives.length) {
+          altContainer.innerHTML = `<p class="field-label">ALTERNATIVE NETWORK PATHS · ESTIMATES</p>${alternatives.slice(0, 2).map((route, index) => `<div class="alt-route"><strong>Option ${index + 1} · ${route.distance} km graph estimate</strong><br>${route.path.join(" → ")}</div>`).join("")}`;
+        } else {
+          altContainer.innerHTML = '<div class="alt-route">No alternate route is available in this network.</div>';
+        }
+      }
+      if (!document.getElementById("osrm-option").checked) {
+        notice.textContent = "Route calculated using the local network; the orange line connects city locations directly.";
+        renderMap(shortest.path);
+        return;
+      }
+
+      findRouteButton.disabled = true;
+      notice.textContent = "Loading road directions from OSRM…";
+      try {
+        const roadRoute = await getRoadRoute(shortest.path);
+        const geometry = roadRoute.geometry.coordinates.map(([longitude, latitude]) => [latitude, longitude]);
+        const distance = roadRoute.distance / 1000;
+        const durationMinutes = Math.round(roadRoute.duration / 60);
+        document.getElementById("route-distance").textContent = `${distance.toFixed(1)} km`;
+        document.getElementById("route-duration").textContent = `${Math.floor(durationMinutes / 60)} hr ${durationMinutes % 60} min`;
+        notice.textContent = "OSRM road directions and distance for the selected network path; alternative path distances are estimates. Map data © OpenStreetMap contributors.";
+        renderMap(shortest.path, geometry);
+      } catch (error) {
+        console.error("Could not load OSRM road directions:", error);
+        notice.textContent = "Road directions could not be loaded. Showing the local network route and illustrative distance instead.";
+        renderMap(shortest.path);
+      } finally {
+        findRouteButton.disabled = false;
+      }
+    }
+
+    fillCities();
+    updateEdgeBounds();
+    document.getElementById("find-route").addEventListener("click", renderRoute);
+  </script>
+</body>
+</html>
